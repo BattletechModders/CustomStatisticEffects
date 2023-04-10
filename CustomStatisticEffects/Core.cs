@@ -14,6 +14,29 @@ namespace CustomStatisticEffects {
   internal class Settings {
     public bool debugLog { get; set; } = false;
   }
+  [HarmonyPatch]
+  public static class ModTek_FinishLoading_Patch {
+    public static MethodBase TargetMethod() => AccessTools.Method("ModTek.Features.Manifest.Mods.ModDefsDatabase:FinishedLoadingMods");
+
+    public static void Prefix() {
+      try {
+        Log.Error?.TWL(0, "FinishedLoading");
+        Dictionary<string, Dictionary<string, VersionManifestEntry>> customResources = AccessTools.Method("ModTek.Features.CustomResources.CustomResourcesFeature:GetResourceDictionariesForTypes").Invoke(null, new object[] { new List<string>() { nameof(EffectDataDef) } }) as Dictionary<string, Dictionary<string, VersionManifestEntry>>;
+        foreach (var customResource in customResources) {
+          Log.Debug?.WL(1, "customResource:" + customResource.Key);
+          if (customResource.Key == nameof(EffectDataDef)) {
+            foreach (var resource in customResource.Value) {
+              Log.Debug?.WL(2, "resource:" + resource.Key + "=" + resource.Value.FilePath);
+              EffectDataDef.Register(resource.Key, resource.Value);
+            }
+          }
+        }
+      } catch (Exception e) {
+        Log.Error?.TWL(0, e.ToString());
+      }
+    }
+  }
+
   public static class Core {
     internal static string BaseDir { get; set; } = string.Empty;
     internal static Settings settings { get; set; } = new Settings();
@@ -27,15 +50,6 @@ namespace CustomStatisticEffects {
     public static void FinishedLoading(List<string> loadOrder, Dictionary<string, Dictionary<string, VersionManifestEntry>> customResources) {
       Log.Error?.TWL(0, "FinishedLoading");
       try {
-        foreach (var customResource in customResources) {
-          Log.Debug?.WL(1, "customResource:" + customResource.Key);
-          if (customResource.Key == nameof(EffectDataDef)) {
-            foreach (var resource in customResource.Value) {
-              Log.Debug?.WL(2, "resource:" + resource.Key + "=" + resource.Value.FilePath);
-              EffectDataDef.Register(resource.Key, resource.Value);
-            }
-          }
-        }
       } catch (Exception e) {
         Log.TWL(0, e.ToString(), true);
       }
@@ -52,6 +66,8 @@ namespace CustomStatisticEffects {
       Core.settings = JsonConvert.DeserializeObject<CustomStatisticEffects.Settings>(settingsJson);
       Log.TWL(0, "Initing... " + directory + " version: " + Assembly.GetExecutingAssembly().GetName().Version, true);
       try {
+        EffectDurationDataHelper.Prepare();
+        StatisticEffectDataHelper.Prepare();
         var harmony = new Harmony("ru.kmission.customstatisticeffects");
         harmony.PatchAll(Assembly.GetExecutingAssembly());
       } catch (Exception e) {

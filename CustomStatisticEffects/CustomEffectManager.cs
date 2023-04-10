@@ -2,8 +2,179 @@
 using HarmonyLib;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using System.Reflection.Emit;
 
 namespace CustomStatisticEffects {
+  public static class StatisticEffectDataHelper {
+    private delegate string d_Field_get(BattleTech.StatisticEffectData src);
+    private delegate void d_Field_set(BattleTech.StatisticEffectData src, string value);
+    private static d_Field_get i_Location_get = null;
+    private static d_Field_set i_Location_set = null;
+    private static d_Field_get i_ShouldNotHaveTags_get = null;
+    private static d_Field_set i_ShouldNotHaveTags_set = null;
+    private static d_Field_get i_ShouldHaveTags_get = null;
+    private static d_Field_set i_ShouldHaveTags_set = null;
+    private static d_Field_get i_abilifierId_get = null;
+    private static d_Field_set i_abilifierId_set = null;
+    public static string abilifierId(this BattleTech.StatisticEffectData src) {
+      if (i_abilifierId_get == null) { return string.Empty; }
+      return i_abilifierId_get(src);
+    }
+    public static void abilifierId(this BattleTech.StatisticEffectData src, string value) {
+      if (i_abilifierId_set == null) { return; }
+      i_abilifierId_set(src, value);
+    }
+    public static string Location(this BattleTech.StatisticEffectData src) {
+      if (i_Location_get == null) { return string.Empty; }
+      return i_Location_get(src);
+    }
+    public static void Location(this BattleTech.StatisticEffectData src, string value) {
+      if (i_Location_set == null) { return; }
+      i_Location_set(src, value);
+    }
+    public static string ShouldNotHaveTags(this BattleTech.StatisticEffectData src) {
+      if (i_ShouldNotHaveTags_get == null) { return string.Empty; }
+      return i_ShouldNotHaveTags_get(src);
+    }
+    public static void ShouldNotHaveTags(this BattleTech.StatisticEffectData src, string value) {
+      if (i_ShouldNotHaveTags_set == null) { return; }
+      i_ShouldNotHaveTags_set(src, value);
+    }
+    public static string ShouldHaveTags(this BattleTech.StatisticEffectData src) {
+      if (i_ShouldHaveTags_get == null) { return string.Empty; }
+      return i_ShouldHaveTags_get(src);
+    }
+    public static void ShouldHaveTags(this BattleTech.StatisticEffectData src, string value) {
+      if (i_ShouldHaveTags_set == null) { return; }
+      i_ShouldHaveTags_set(src, value);
+    }
+    public static void Prepare() {
+      FieldInfo Location = typeof(BattleTech.StatisticEffectData).GetField("Location", BindingFlags.Public | BindingFlags.Instance);
+      Log.Error?.WL(1, $"StatisticEffectData.Location {(Location == null ? "not found" : "found")}");
+      if (Location != null) {
+        {
+          var dm = new DynamicMethod("get_Location", typeof(string), new Type[] { typeof(BattleTech.StatisticEffectData) });
+          var gen = dm.GetILGenerator();
+          gen.Emit(OpCodes.Ldarg_0);
+          gen.Emit(OpCodes.Ldfld, Location);
+          gen.Emit(OpCodes.Ret);
+          i_Location_get = (d_Field_get)dm.CreateDelegate(typeof(d_Field_get));
+        }
+        {
+          var dm = new DynamicMethod("set_Location", null, new Type[] { typeof(BattleTech.StatisticEffectData), typeof(string) });
+          var gen = dm.GetILGenerator();
+          gen.Emit(OpCodes.Ldarg_0);
+          gen.Emit(OpCodes.Ldarg_1);
+          gen.Emit(OpCodes.Stfld, Location);
+          gen.Emit(OpCodes.Ret);
+          i_Location_set = (d_Field_set)dm.CreateDelegate(typeof(d_Field_set));
+        }
+      }
+      FieldInfo ShouldHaveTags = typeof(BattleTech.StatisticEffectData).GetField("ShouldHaveTags", BindingFlags.Public | BindingFlags.Instance);
+      Log.Error?.WL(1, $"StatisticEffectData.ShouldHaveTags {(ShouldHaveTags == null ? "not found" : "found")}");
+      if (ShouldHaveTags != null) {
+        {
+          var dm = new DynamicMethod("get_ShouldHaveTags", typeof(string), new Type[] { typeof(BattleTech.StatisticEffectData) });
+          var gen = dm.GetILGenerator();
+          gen.Emit(OpCodes.Ldarg_0);
+          gen.Emit(OpCodes.Ldfld, ShouldHaveTags);
+          gen.Emit(OpCodes.Ret);
+          i_ShouldHaveTags_get = (d_Field_get)dm.CreateDelegate(typeof(d_Field_get));
+        }
+        {
+          var dm = new DynamicMethod("set_ShouldHaveTags", null, new Type[] { typeof(BattleTech.StatisticEffectData), typeof(string) });
+          var gen = dm.GetILGenerator();
+          gen.Emit(OpCodes.Ldarg_0);
+          gen.Emit(OpCodes.Ldarg_1);
+          gen.Emit(OpCodes.Stfld, ShouldHaveTags);
+          gen.Emit(OpCodes.Ret);
+          i_ShouldHaveTags_set = (d_Field_set)dm.CreateDelegate(typeof(d_Field_set));
+        }
+      }
+      FieldInfo ShouldNotHaveTags = typeof(BattleTech.StatisticEffectData).GetField("ShouldNotHaveTags", BindingFlags.Public | BindingFlags.Instance);
+      Log.Error?.WL(1, $"StatisticEffectData.ShouldNotHaveTags {(ShouldNotHaveTags == null ? "not found" : "found")}");
+      if (ShouldNotHaveTags != null) {
+        {
+          var dm = new DynamicMethod("get_ShouldNotHaveTags", typeof(string), new Type[] { typeof(BattleTech.StatisticEffectData) });
+          var gen = dm.GetILGenerator();
+          gen.Emit(OpCodes.Ldarg_0);
+          gen.Emit(OpCodes.Ldfld, ShouldNotHaveTags);
+          gen.Emit(OpCodes.Ret);
+          i_ShouldNotHaveTags_get = (d_Field_get)dm.CreateDelegate(typeof(d_Field_get));
+        }
+        {
+          var dm = new DynamicMethod("set_ShouldNotHaveTags", null, new Type[] { typeof(BattleTech.StatisticEffectData), typeof(string) });
+          var gen = dm.GetILGenerator();
+          gen.Emit(OpCodes.Ldarg_0);
+          gen.Emit(OpCodes.Ldarg_1);
+          gen.Emit(OpCodes.Stfld, ShouldNotHaveTags);
+          gen.Emit(OpCodes.Ret);
+          i_ShouldNotHaveTags_set = (d_Field_set)dm.CreateDelegate(typeof(d_Field_set));
+        }
+      }
+      FieldInfo abilifierId = typeof(BattleTech.StatisticEffectData).GetField("abilifierId", BindingFlags.Public | BindingFlags.Instance);
+      Log.Error?.WL(1, $"StatisticEffectData.abilifierId {(abilifierId == null ? "not found" : "found")}");
+      if (abilifierId != null) {
+        {
+          var dm = new DynamicMethod("get_abilifierId", typeof(string), new Type[] { typeof(BattleTech.StatisticEffectData) });
+          var gen = dm.GetILGenerator();
+          gen.Emit(OpCodes.Ldarg_0);
+          gen.Emit(OpCodes.Ldfld, abilifierId);
+          gen.Emit(OpCodes.Ret);
+          i_abilifierId_get = (d_Field_get)dm.CreateDelegate(typeof(d_Field_get));
+        }
+        {
+          var dm = new DynamicMethod("set_abilifierId", null, new Type[] { typeof(BattleTech.StatisticEffectData), typeof(string) });
+          var gen = dm.GetILGenerator();
+          gen.Emit(OpCodes.Ldarg_0);
+          gen.Emit(OpCodes.Ldarg_1);
+          gen.Emit(OpCodes.Stfld, abilifierId);
+          gen.Emit(OpCodes.Ret);
+          i_abilifierId_set = (d_Field_set)dm.CreateDelegate(typeof(d_Field_set));
+        }
+      }
+    }
+  }
+  public static class EffectDurationDataHelper {
+    private delegate string d_Field_get(BattleTech.EffectDurationData src);
+    private delegate void d_Field_set(BattleTech.EffectDurationData src, string value);
+    private static d_Field_get i_stackId_get = null;
+    private static d_Field_set i_stackId_set = null;
+    public static string stackId(this BattleTech.EffectDurationData src) {
+      if (i_stackId_get == null) { return string.Empty; }
+      return i_stackId_get(src);
+    }
+    public static void stackId(this BattleTech.EffectDurationData src, string value) {
+      if (i_stackId_set == null) { return; }
+      i_stackId_set(src, value);
+    }
+    public static void Prepare() {
+      FieldInfo stackId = typeof(BattleTech.EffectDurationData).GetField("stackId", BindingFlags.Public | BindingFlags.Instance);
+      Log.Error?.WL(1, $"EffectDurationData.stackId {(stackId == null ? "not found" : "found")}");
+      if (stackId != null) {
+        {
+          var dm = new DynamicMethod("get_stackId", typeof(string), new Type[] { typeof(BattleTech.EffectDurationData) });
+          var gen = dm.GetILGenerator();
+          gen.Emit(OpCodes.Ldarg_0);
+          gen.Emit(OpCodes.Ldfld, stackId);
+          gen.Emit(OpCodes.Ret);
+          i_stackId_get = (d_Field_get)dm.CreateDelegate(typeof(d_Field_get));
+        }
+        {
+          var dm = new DynamicMethod("set_stackId", null, new Type[] { typeof(BattleTech.EffectDurationData), typeof(string) });
+          var gen = dm.GetILGenerator();
+          gen.Emit(OpCodes.Ldarg_0);
+          gen.Emit(OpCodes.Ldarg_1);
+          gen.Emit(OpCodes.Stfld, stackId);
+          gen.Emit(OpCodes.Ret);
+          i_stackId_set = (d_Field_set)dm.CreateDelegate(typeof(d_Field_set));
+        }
+      }
+    }
+  }
+
   public static class EffectManagerHelper {
     private static Dictionary<StatCollection, Dictionary<string, List<StatisticEffect>>> activeEffectCache = new Dictionary<StatCollection, Dictionary<string, List<StatisticEffect>>>();
     public static void Clear() { activeEffectCache.Clear(); }
@@ -31,7 +202,15 @@ namespace CustomStatisticEffects {
           list1.Add(effect);
           activeEffectCache[effect.statCollection][effect.effectData.Description.Id] = list1;
         }
-      }catch(Exception e) {
+        if (string.IsNullOrEmpty(effect.effectData.durationData.stackId()) == false) {
+          if (effect_id_cache.TryGetValue(effect.effectData.durationData.stackId(), out var list2) == false) {
+            list2 = new List<StatisticEffect>();
+            effect_id_cache.Add(effect.effectData.durationData.stackId(), list2);
+          }
+          list2.Add(effect);
+          activeEffectCache[effect.statCollection][effect.effectData.durationData.stackId()] = list2;
+        }
+      } catch (Exception e) {
         Log.Error?.TWL(0,e.ToString());
       }
     }
@@ -59,7 +238,15 @@ namespace CustomStatisticEffects {
           list1.Remove(effect);
           activeEffectCache[effect.statCollection][effect.effectData.Description.Id] = list1;
         }
-      }catch(Exception e) {
+        if (string.IsNullOrEmpty(effect.effectData.durationData.stackId()) == false) {
+          if (effect_id_cache.TryGetValue(effect.effectData.durationData.stackId(), out var list2) == false) {
+            list2 = new List<StatisticEffect>();
+            effect_id_cache.Add(effect.effectData.durationData.stackId(), list2);
+          }
+          list2.Remove(effect);
+          activeEffectCache[effect.statCollection][effect.effectData.durationData.stackId()] = list2;
+        }
+      } catch (Exception e) {
         Log.Error?.TWL(0, e.ToString());
       }
     }
@@ -78,14 +265,16 @@ namespace CustomStatisticEffects {
     }
     public static List<StatisticEffect> EffectsByDataID(this StatisticEffect effect) {
       if (effect.statCollection == null) { return new List<StatisticEffect>(); }
-      if (string.IsNullOrEmpty(effect.effectData.Description.Id)) { return new List<StatisticEffect>(); }
+      string id = effect.effectData.durationData.stackId();
+      if (string.IsNullOrEmpty(id)) { id = effect.effectData.Description.Id; }
+      if (string.IsNullOrEmpty(id)) { return new List<StatisticEffect>(); }
       if (activeEffectCache.TryGetValue(effect.statCollection, out var effect_id_cache) == false) {
         effect_id_cache = new Dictionary<string, List<StatisticEffect>>();
         activeEffectCache.Add(effect.statCollection, effect_id_cache);
       }
-      if (effect_id_cache.TryGetValue(effect.effectData.Description.Id, out var list) == false) {
+      if (effect_id_cache.TryGetValue(id, out var list) == false) {
         list = new List<StatisticEffect>();
-        effect_id_cache.Add(effect.effectData.Description.Id, list);
+        effect_id_cache.Add(id, list);
       }
       return list;
     }
@@ -173,6 +362,7 @@ namespace CustomStatisticEffects {
     public static void Postfix(EffectManager __instance, Effect e) {
       if (e is StatisticEffect seffect) {
         seffect.UncacheEffectID();
+        //Log.Debug?.TWL(0, $"EffectManager.CancelEffect descriptionId:{e.effectData.Description.Id} stackId:{e.EffectData.durationData.stackId()} abilifierId:{e.EffectData.durationData.abilifierId()} name:'{e.EffectData.Description.Name}' target:{seffect.Target.PilotableActorDef.ChassisID} stack:{seffect.CountApplied(false)}");
         seffect.ReapplyStack();
         //__instance.Dump();
       }
@@ -183,6 +373,7 @@ namespace CustomStatisticEffects {
     public static void Postfix(EffectManager __instance, Effect e) {
       if (e is StatisticEffect seffect) {
         seffect.UncacheEffectID();
+        //Log.Debug?.TWL(0, $"EffectManager.EffectComplete descriptionId:{e.effectData.Description.Id} stackId:{e.EffectData.durationData.stackId()} abilifierId:{e.EffectData.durationData.abilifierId()} name:'{e.EffectData.Description.Name}' target:{seffect.Target.PilotableActorDef.ChassisID} stack:{seffect.CountApplied(false)}");
         seffect.ReapplyStack();
         //__instance.Dump();
       }
@@ -246,9 +437,10 @@ namespace CustomStatisticEffects {
     }
     public static void Prefix(StatisticEffect __instance, ref bool __runOriginal) {
       //if (__instance is StatisticEffect seffect) {
-        if (__instance.CheckStackLimit() == false) {
-          __runOriginal = false; __instance.SetApplicationStatus(false);
-          Log.Debug?.TWL(0, $"StatisticEffect.OnEffectBegin effect:{__instance.EffectData.Description.Id} target:{__instance.Target.PilotableActorDef.ChassisID} rejected by stack limit");
+      if (__instance.CheckStackLimit() == false) {
+        Log.Debug?.TWL(0, $"StatisticEffect.OnEffectBegin descriptionId:{__instance.EffectData.Description.Id} stackId:{__instance.EffectData.durationData.stackId()} abilifierId:{__instance.EffectData.statisticData.abilifierId()} name:'{__instance.EffectData.Description.Name}' target:{__instance.Target.PilotableActorDef.ChassisID}");
+        Log.Debug?.WL(1, $"rejected by stack limit");
+        __runOriginal = false; __instance.SetApplicationStatus(false);
         } else {
           __instance.SetApplicationStatus(true);
         }
@@ -266,7 +458,8 @@ namespace CustomStatisticEffects {
         if (effectData.effectType != EffectType.StatisticEffect) { return; }
         __runOriginal = false;
         __result = new List<Effect>();
-        List<StatCollection> targetStatCollections = __instance.GetTargetStatCollections(effectData, target);
+        List<StatCollection> targetStatCollections = __instance.GetTargetStatCollections(effectData, target).ToHashSet().ToList();
+        //Log.Debug?.TWL(0, $"EffectManager.CreateEffect team descriptionId:{effectData.Description.Id} stackId:{effectData.durationData.stackId()} abilifierId:{effectData.durationData.abilifierId()} name:'{effectData.Description.Name}' target:{target.PilotableActorDef.ChassisID} collections:{targetStatCollections.Count}");
         for (int index = 0; index < targetStatCollections.Count; ++index) {
           if (targetStatCollections[index].ContainsStatistic(effectData.statisticData.statName) == false) { continue; }
           var effect = new StatisticEffect(__instance.Combat, effectID, stackItemUID, creator, target, targetStatCollections[index], effectData, hitInfo, attackIndex);
@@ -289,7 +482,9 @@ namespace CustomStatisticEffects {
         if (effectData.effectType != EffectType.StatisticEffect) { return; }
         __runOriginal = false;
         __result = new List<Effect>();
-        List<StatCollection> targetStatCollections = __instance.GetTargetStatCollections(effectData, target);
+        List<StatCollection> targetStatCollections = __instance.GetTargetStatCollections(effectData, target).ToHashSet().ToList();
+        Log.Debug?.TWL(0, $"EffectManager.CreateEffect actor descriptionId:{effectData.Description.Id} stackId:{effectData.durationData.stackId()} abilifierId:{effectData.statisticData.abilifierId()} name:'{effectData.Description.Name}' target:{target.PilotableActorDef.ChassisID} collections:{targetStatCollections.Count}");
+        //Log.Debug?.WL(0, Environment.StackTrace);
         for (int index = 0; index < targetStatCollections.Count; ++index) {
           if (targetStatCollections[index].ContainsStatistic(effectData.statisticData.statName) == false) { continue; }
           var effect = new StatisticEffect(__instance.Combat, effectID, stackItemUID, creator, target, targetStatCollections[index], effectData, hitInfo, attackIndex);
