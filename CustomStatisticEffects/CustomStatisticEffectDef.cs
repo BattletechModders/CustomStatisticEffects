@@ -61,7 +61,7 @@ namespace CustomStatisticEffects {
     public static void Postfix(ref object target) {
       try {
         if(target is BattleTech.EffectData effectData) {
-          Log.Debug?.WL($"JSONSerializationUtility.RehydrateObjectFromDictionary {effectData.Description.Id} Name:{effectData.Description.Name}");
+          //Log.Debug?.WL($"JSONSerializationUtility.RehydrateObjectFromDictionary {effectData.Description.Id} Name:{effectData.Description.Name}");
           if (string.IsNullOrEmpty(effectData.Description.Name)) {
             if (string.IsNullOrEmpty(effectData.Description.Id) == false) {
               if (EffectDataDef.Request(effectData.Description.Id, out var result)) {

@@ -1,5 +1,6 @@
 ﻿using BattleTech;
 using HarmonyLib;
+using HBS.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,6 +9,7 @@ using System.Reflection.Emit;
 
 namespace CustomStatisticEffects {
   public static class StatisticEffectDataHelper {
+    public static readonly string REMOVE_EFFECT_STATISTIC_NAME = "_CANCEL_EFFECT";
     private delegate string d_Field_get(BattleTech.StatisticEffectData src);
     private delegate void d_Field_set(BattleTech.StatisticEffectData src, string value);
     private static d_Field_get i_Location_get = null;
@@ -264,13 +266,16 @@ namespace CustomStatisticEffects {
       return list;
     }
     public static List<StatisticEffect> EffectsByDataID(this StatisticEffect effect) {
-      if (effect.statCollection == null) { return new List<StatisticEffect>(); }
-      string id = effect.effectData.durationData.stackId();
-      if (string.IsNullOrEmpty(id)) { id = effect.effectData.Description.Id; }
+      return effect.effectData.EffectsByDataID(effect.statCollection);
+    }
+    public static List<StatisticEffect> EffectsByDataID(this EffectData effectData, StatCollection statCollection) {
+      if (statCollection == null) { return new List<StatisticEffect>(); }
+      string id = effectData.durationData.stackId();
+      if (string.IsNullOrEmpty(id)) { id = effectData.Description.Id; }
       if (string.IsNullOrEmpty(id)) { return new List<StatisticEffect>(); }
-      if (activeEffectCache.TryGetValue(effect.statCollection, out var effect_id_cache) == false) {
+      if (activeEffectCache.TryGetValue(statCollection, out var effect_id_cache) == false) {
         effect_id_cache = new Dictionary<string, List<StatisticEffect>>();
-        activeEffectCache.Add(effect.statCollection, effect_id_cache);
+        activeEffectCache.Add(statCollection, effect_id_cache);
       }
       if (effect_id_cache.TryGetValue(id, out var list) == false) {
         list = new List<StatisticEffect>();
@@ -353,8 +358,41 @@ namespace CustomStatisticEffects {
   [HarmonyPatch(typeof(EffectManager), "AddEffect")]
   public static class EffectManager_AddEffect {
     public static void Postfix(EffectManager __instance, Effect effect) {
-      if (effect is StatisticEffect seffect) { seffect.CacheEffectID(); }
-      
+      if (effect is StatisticEffect seffect) { seffect.CacheEffectID(); }      
+    }
+  }
+  [HarmonyPatch(typeof(AbstractActor), "OnActivationEnd")]
+  public static class AbstractActor_OnActivationEnd {
+    public static void Prefix(AbstractActor __instance, ref bool __state) {
+      if (__instance == null) { return; }
+      __state = __instance.HasActivatedThisRound;
+      try {
+        Log.TWL(0, $"AbstractActor.OnActivationEnd {__instance.PilotableActorDef.ChassisID}:{__instance.GUID} HasActivatedThisRound:{__instance.HasActivatedThisRound}");
+      }catch(Exception e) {
+        Log.TWL(0,e.ToString(),true);
+      }
+    }
+    public static void Postfix(AbstractActor __instance, ref bool __state) {
+      if (__instance == null) { return; }
+      try {
+        if (__state == true) { return; }
+        Log.TWL(0, $"AbstractActor.OnActivationEnd {__instance.PilotableActorDef.ChassisID}:{__instance.GUID} HasActivatedThisRound:{__state}");
+        __instance.Combat.EffectManager.NotifyEndOfObjectActivation(__instance.GUID);
+      } catch (Exception e) {
+        Log.TWL(0, e.ToString(), true);
+      }
+    }
+  }
+  [HarmonyPatch(typeof(EffectManager), "OnTurnActorActivateComplete")]
+  public static class EffectManager_OnTurnActorActivateComplete {
+    public static void Prefix(EffectManager __instance, ref bool __runOriginal) {
+      if (__instance == null) { return; }
+      __runOriginal = false;
+      try {
+
+      } catch (Exception e) {
+        Log.TWL(0, e.ToString(), true);
+      }
     }
   }
   [HarmonyPatch(typeof(EffectManager), "CancelEffect")]
@@ -464,6 +502,10 @@ namespace CustomStatisticEffects {
           if (targetStatCollections[index].ContainsStatistic(effectData.statisticData.statName) == false) { continue; }
           var effect = new StatisticEffect(__instance.Combat, effectID, stackItemUID, creator, target, targetStatCollections[index], effectData, hitInfo, attackIndex);
           __instance.AddEffect(effect, skipLogging);
+          if (EffectManager.AbilityLogger.IsLogEnabled) {
+            LogLevel level = skipLogging ? LogLevel.Debug : LogLevel.Log;
+            EffectManager.AbilityLogger.LogAtLevel(level, string.Format("{0} gains effect {1} from team {2}", target.DisplayName, effect.EffectData.Description.Name, creator.DisplayName));
+          }
           __result.Add(effect);
         }
       } catch (Exception e) {
@@ -475,20 +517,38 @@ namespace CustomStatisticEffects {
   [HarmonyPatch(MethodType.Normal)]
   [HarmonyPatch("CreateEffect")]
   [HarmonyPatch(new Type[] { typeof(EffectData), typeof(string), typeof(int), typeof(ICombatant), typeof(ICombatant), typeof(WeaponHitInfo), typeof(int), typeof(bool) })]
-  [HarmonyPriority(0)]
+  [HarmonyAfter("io.mission.activatablecomponents")]
   public static class EffectManager_CreateEffect_Actor {
+    public static void RemoveEffect(this EffectManager effectManager, StatCollection statCollection, EffectData effectData, bool skipLogging) {
+      var effectsToRemove = effectData.EffectsByDataID(statCollection);
+      foreach(var effect in effectsToRemove) {
+        effectManager.CancelEffect(effect, skipLogging);
+      }
+    }
     public static void Prefix(ref bool __runOriginal, EffectManager __instance, EffectData effectData, string effectID, int stackItemUID, ICombatant creator, ICombatant target, WeaponHitInfo hitInfo, int attackIndex, bool skipLogging, ref List<Effect> __result) {
       try {
         if (effectData.effectType != EffectType.StatisticEffect) { return; }
         __runOriginal = false;
         __result = new List<Effect>();
         List<StatCollection> targetStatCollections = __instance.GetTargetStatCollections(effectData, target).ToHashSet().ToList();
-        Log.Debug?.TWL(0, $"EffectManager.CreateEffect actor descriptionId:{effectData.Description.Id} stackId:{effectData.durationData.stackId()} abilifierId:{effectData.statisticData.abilifierId()} name:'{effectData.Description.Name}' target:{target.PilotableActorDef.ChassisID} collections:{targetStatCollections.Count}");
+        //Log.Debug?.TWL(0, $"EffectManager.CreateEffect actor descriptionId:{effectData.Description.Id} stackId:{effectData.durationData.stackId()} abilifierId:{effectData.statisticData.abilifierId()} statName:{effectData.statisticData.statName} name:'{effectData.Description.Name}' target:{target.PilotableActorDef.ChassisID} collections:{targetStatCollections.Count}");
         //Log.Debug?.WL(0, Environment.StackTrace);
         for (int index = 0; index < targetStatCollections.Count; ++index) {
+          if(StatisticEffectDataHelper.REMOVE_EFFECT_STATISTIC_NAME == effectData.statisticData.statName) {
+            __instance.RemoveEffect(targetStatCollections[index], effectData, skipLogging);
+            continue;
+          }
           if (targetStatCollections[index].ContainsStatistic(effectData.statisticData.statName) == false) { continue; }
           var effect = new StatisticEffect(__instance.Combat, effectID, stackItemUID, creator, target, targetStatCollections[index], effectData, hitInfo, attackIndex);
           __instance.AddEffect(effect, skipLogging);
+          if (EffectManager.AbilityLogger.IsLogEnabled && !skipLogging) {
+            LogLevel level = skipLogging ? LogLevel.Debug : LogLevel.Log;
+            if (creator != target) {
+              EffectManager.AbilityLogger.LogAtLevel(level, string.Format("{0} gains effect {1} from {2}", target.DisplayName, effect.EffectData.Description.Name, creator.DisplayName));
+            } else {
+              EffectManager.AbilityLogger.LogAtLevel(level, string.Format("{0} gains effect {1} from self", target.DisplayName, effect.EffectData.Description.Name));
+            }
+          }
           __result.Add(effect);
         }
       } catch (Exception e) {
