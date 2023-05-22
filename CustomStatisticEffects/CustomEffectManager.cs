@@ -417,6 +417,49 @@ namespace CustomStatisticEffects {
       }
     }
   }
+  [HarmonyPatch(typeof(VFXEffect), "OnEffectEnd")]
+  public static class VFXEffect_OnEffectEnd {
+    public static void Finalizer(VFXEffect __instance, ref Exception __exception) {
+      try {
+        if (__exception == null) { return; }
+        EffectManager.AbilityLogger.LogError("CustomStatisticEffects is just a victim here. At least we are able to proceed");
+        EffectManager.AbilityLogger.LogException(__exception);
+        __exception = null;
+      }catch(Exception e) {
+        EffectManager.AbilityLogger.LogException(e);
+      }
+    }
+  }
+  [HarmonyPatch(typeof(VFXEffect), "StopVFX")]
+  public static class VFXEffect_StopVFX {
+    public static void Prefix(ref bool __runOriginal, VFXEffect __instance) {
+      try {
+        if (!__runOriginal) { return; }
+        if (__instance.Target == null) {
+          EffectManager.AbilityLogger.LogError($"effect has no target. skip stopping VFX:{__instance.vfxData.vfxName}");
+          __runOriginal = false;
+          return;
+        }
+        if (__instance.Target.GameRep == null) {
+          EffectManager.AbilityLogger.LogError($"effect target have no game rep. skip stopping VFX:{__instance.vfxData.vfxName}");
+          __runOriginal = false;
+          return;
+        }
+      } catch (Exception e) {
+        EffectManager.AbilityLogger.LogException(e);
+      }
+    }
+    public static void Finalizer(VFXEffect __instance, ref Exception __exception) {
+      try {
+        if (__exception == null) { return; }
+        EffectManager.AbilityLogger.LogError($"CustomStatisticEffects is just a victim here. At least we are able to proceed. VFX:{__instance.vfxData.vfxName}");
+        EffectManager.AbilityLogger.LogException(__exception);
+        __exception = null;
+      } catch (Exception e) {
+        EffectManager.AbilityLogger.LogException(e);
+      }
+    }
+  }
   [HarmonyPatch(typeof(StatisticEffect), "OnEffectPhaseBegin")]
   public static class StatisticEffect_OnEffectPhaseBegin {
     public static void Prefix(StatisticEffect __instance, ref bool __runOriginal) {
